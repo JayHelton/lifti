@@ -1,0 +1,32 @@
+{
+  "name": "Lifti - Workout and Run Tracker",
+  "short_name": "Lifti",
+  "description": "A lightweight offline workout, run, and bodyweight tracker.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0F10",
+  "theme_color": "#0B0F10",
+  "categories": ["fitness", "health", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

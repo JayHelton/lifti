@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lifti</title>
+  <meta name="description" content="A lightweight offline workout, run, and bodyweight tracker.">
+  <meta name="theme-color" content="#0B0F10">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lifti">
+  <meta name="application-name" content="Lifti">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="wordmark">lifti</h1>
+    <div class="header-actions">
+      <button class="ghost-button" id="install-button" type="button" hidden>Install</button>
+    </div>
+  </header>
+  <button id="home-back" class="floating-home" type="button" hidden>Back</button>
+
+  <main id="app" class="app-shell" aria-live="polite"></main>
+  <nav id="bottom-nav" class="dock" aria-label="Primary sections"></nav>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+        navigator.serviceWorker.register("service-worker.js").then((registration) => {
+          registration.update().catch(() => {});
+          if (registration.waiting) registration.waiting.postMessage("SKIP_WAITING");
+          registration.addEventListener("updatefound", () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener("statechange", () => {
+              if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                worker.postMessage("SKIP_WAITING");
+              }
+            });
+          });
+        }).catch((error) => {
+          console.warn("Service worker registration failed:", error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
