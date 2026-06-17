@@ -65,6 +65,12 @@ const MAIN_LIFTS = [
   ["Deadlift", "Deadlift Day"]
 ];
 
+const FIVE_THREE_ONE_BACKOFF = {
+  percent: 0.5,
+  sets: 5,
+  reps: 10
+};
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -117,8 +123,10 @@ function workSetsForLift(lift, settings) {
   });
 
   if (settings.firstSetLast && week !== 4) {
-    const firstWorkWeight = roundWeight(tm * work[0][0], increment);
-    for (let i = 0; i < 5; i += 1) sets.push(makeSet(firstWorkWeight, 10));
+    const backoffWeight = roundWeight(tm * FIVE_THREE_ONE_BACKOFF.percent, increment);
+    for (let i = 0; i < FIVE_THREE_ONE_BACKOFF.sets; i += 1) {
+      sets.push(makeSet(backoffWeight, FIVE_THREE_ONE_BACKOFF.reps));
+    }
   }
 
   return sets;

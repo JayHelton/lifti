@@ -619,7 +619,7 @@ function renderPrograms(state) {
         </div>
         <div class="pill-row">
           <label class="pill"><input type="checkbox" name="warmups" ${s.warmups ? "checked" : ""}> Warmups</label>
-          <label class="pill"><input type="checkbox" name="firstSetLast" ${s.firstSetLast ? "checked" : ""}> First Set Last</label>
+          <label class="pill"><input type="checkbox" name="firstSetLast" ${s.firstSetLast ? "checked" : ""}> 5x10 @ 50%</label>
         </div>
         <button class="btn primary" type="submit">Generate</button>
       </form>
