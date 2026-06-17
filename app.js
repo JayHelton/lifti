@@ -371,6 +371,21 @@ async function deleteRun(id) {
   renderState();
 }
 
+async function deleteHistoryItem(type, id) {
+  const storesByType = {
+    Workout: "sessions",
+    Run: "runs",
+    Bodyweight: "bodyweight"
+  };
+  const storeName = storesByType[type];
+  if (!storeName || !id) return;
+
+  await remove(storeName, id);
+  if (state.openHistoryId === id) state.openHistoryId = null;
+  await loadData();
+  renderState();
+}
+
 function stopRunTimers() {
   if (runInterval) clearInterval(runInterval);
   runInterval = null;
@@ -628,6 +643,7 @@ async function init() {
     deleteBodyweight,
     addManualRun,
     deleteRun,
+    deleteHistoryItem,
     startRun,
     updateRunTracker,
     finishRun,

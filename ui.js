@@ -89,6 +89,9 @@ function handleClick(event) {
   }
   if (action === "delete-bodyweight" && confirm("Delete this bodyweight entry?")) actions.deleteBodyweight(button.dataset.id);
   if (action === "delete-run" && confirm("Delete this run?")) actions.deleteRun(button.dataset.id);
+  if (action === "delete-history" && confirm(`Delete this ${button.dataset.type.toLowerCase()} history item?`)) {
+    actions.deleteHistoryItem(button.dataset.type, button.dataset.id);
+  }
   if (action === "history-toggle") actions.setOpenHistory(button.dataset.id);
   if (action === "start-run") actions.startRun(button.dataset.gps === "true");
   if (action === "finish-run") actions.finishRun();
@@ -536,14 +539,17 @@ function buildActivityLog(state) {
 
 function renderActivityItem(item, open) {
   return `<div class="history-item">
-    <button class="history-toggle" type="button" data-action="history-toggle" data-id="${escapeAttr(item.id)}">
-      <div>
-        <div class="meta-row"><span class="pill accent">${escapeHtml(item.type)}</span><span>${formatDate(item.when)}</span></div>
-        <div class="row-title">${escapeHtml(item.title)}</div>
-        <div class="row-subtitle">${escapeHtml(item.subtitle)}</div>
-      </div>
-      <span class="chevron">${open ? "Close" : "Open"}</span>
-    </button>
+    <div class="history-item-head">
+      <button class="history-toggle" type="button" data-action="history-toggle" data-id="${escapeAttr(item.id)}">
+        <div>
+          <div class="meta-row"><span class="pill accent">${escapeHtml(item.type)}</span><span>${formatDate(item.when)}</span></div>
+          <div class="row-title">${escapeHtml(item.title)}</div>
+          <div class="row-subtitle">${escapeHtml(item.subtitle)}</div>
+        </div>
+        <span class="chevron">${open ? "Close" : "Open"}</span>
+      </button>
+      <button class="btn icon danger history-delete" type="button" data-action="delete-history" data-id="${escapeAttr(item.id)}" data-type="${escapeAttr(item.type)}" aria-label="Delete ${escapeAttr(item.type)} history item">x</button>
+    </div>
     ${open ? renderActivityDetail(item) : ""}
   </div>`;
 }
