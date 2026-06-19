@@ -102,7 +102,9 @@ textarea{min-height:76px;resize:vertical}
 .set-grid{display:grid;grid-template-columns:minmax(92px,1fr) minmax(72px,.8fr) minmax(58px,.55fr) 42px;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(230,241,241,.045)}
 .set-grid:last-child{border-bottom:0}
 .set-grid.head{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.8px}
+.set-grid.run{grid-template-columns:minmax(92px,1fr) minmax(92px,1fr) 42px}
 .set-grid.session{grid-template-columns:minmax(82px,.9fr) minmax(70px,.7fr) minmax(70px,.7fr) minmax(48px,.45fr)}
+.set-grid.session.run{grid-template-columns:minmax(100px,1fr) minmax(72px,.7fr) minmax(72px,.7fr) minmax(48px,.45fr)}
 .set-target{font-size:.82rem;color:var(--muted)}
 .check{width:24px;height:24px;accent-color:var(--accent)}
 .session-set{border-bottom:1px solid rgba(230,241,241,.045)}
@@ -154,5 +156,7 @@ canvas{display:block;width:100%;height:100%}
   .day-strip{flex-wrap:wrap;overflow:visible}
   .day-pill{flex:1 1 calc(25% - 8px);padding:8px 6px}
   .set-grid{grid-template-columns:minmax(74px,.9fr) minmax(62px,.7fr) minmax(52px,.5fr) 38px;padding:7px}
+  .set-grid.run{grid-template-columns:minmax(76px,1fr) minmax(76px,1fr) 38px}
   .set-grid.session{grid-template-columns:minmax(70px,.8fr) minmax(58px,.6fr) minmax(58px,.6fr) minmax(42px,.35fr)}
+  .set-grid.session.run{grid-template-columns:minmax(78px,.8fr) minmax(58px,.6fr) minmax(58px,.6fr) minmax(42px,.35fr)}
 }

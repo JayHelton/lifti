@@ -92,6 +92,45 @@ function durationFromText(value) {
   return Number.isFinite(minutes) ? Math.round(minutes * 60) : 0;
 }
 
+function runSetFromData(data = {}) {
+  return {
+    targetDistance: parseNumber(data.distance),
+    targetDurationSeconds: durationFromText(data.duration)
+  };
+}
+
+function runExerciseFromData(data = {}, { session = false } = {}) {
+  const set = runSetFromData(data);
+  const exercise = {
+    name: String(data.name || data.runName || "Run").trim() || "Run",
+    type: "run",
+    sets: [set]
+  };
+  if (session) {
+    exercise.sets = exercise.sets.map((item) => ({
+      ...item,
+      actualDistance: Number(item.targetDistance) || 0,
+      actualDurationSeconds: Number(item.targetDurationSeconds) || 0,
+      completed: false,
+      notes: ""
+    }));
+  }
+  return exercise;
+}
+
+function hasRunFields(set) {
+  return Boolean(set) && (
+    "targetDistance" in set ||
+    "targetDurationSeconds" in set ||
+    "actualDistance" in set ||
+    "actualDurationSeconds" in set
+  );
+}
+
+function isRunExercise(exercise) {
+  return exercise?.type === "run" || (exercise?.sets || []).some((set) => hasRunFields(set));
+}
+
 function distanceMiles(a, b) {
   const radiusMiles = 3958.8;
   const toRad = (degrees) => degrees * Math.PI / 180;
@@ -165,18 +204,29 @@ function sessionFromTemplate(template) {
     endedAt: null,
     durationSeconds: 0,
     prs: [],
-    exercises: template.exercises.map((exercise) => ({
-      name: exercise.name,
-      sets: exercise.sets.map((set) => ({
-        targetWeight: Number(set.targetWeight) || 0,
-        actualWeight: Number(set.targetWeight) || 0,
-        targetReps: Number(set.targetReps) || 0,
-        actualReps: Number(set.targetReps) || 0,
-        amrap: Boolean(set.amrap),
-        completed: false,
-        notes: ""
-      }))
-    }))
+    exercises: (template.exercises || []).map((exercise) => {
+      const isRun = isRunExercise(exercise);
+      return {
+        name: exercise.name,
+        ...(isRun ? { type: "run" } : {}),
+        sets: (exercise.sets || []).map((set) => isRun ? ({
+          targetDistance: Number(set.targetDistance) || 0,
+          actualDistance: Number(set.targetDistance) || 0,
+          targetDurationSeconds: Number(set.targetDurationSeconds) || 0,
+          actualDurationSeconds: Number(set.targetDurationSeconds) || 0,
+          completed: false,
+          notes: ""
+        }) : ({
+          targetWeight: Number(set.targetWeight) || 0,
+          actualWeight: Number(set.targetWeight) || 0,
+          targetReps: Number(set.targetReps) || 0,
+          actualReps: Number(set.targetReps) || 0,
+          amrap: Boolean(set.amrap),
+          completed: false,
+          notes: ""
+        }))
+      };
+    })
   };
 }
 
@@ -215,6 +265,15 @@ async function addExercise(templateId, name) {
   await saveTemplate(template);
 }
 
+async function addTemplateRun(data) {
+  const template = templateById(data.templateId);
+  if (!template) return;
+  const exercise = runExerciseFromData(data);
+  template.exercises.push(exercise);
+  await rememberExercise(exercise.name);
+  await saveTemplate(template);
+}
+
 async function removeExercise(templateId, exerciseIndex) {
   const template = templateById(templateId);
   if (!template) return;
@@ -226,7 +285,9 @@ async function addSet(templateId, exerciseIndex) {
   const template = templateById(templateId);
   const exercise = template?.exercises?.[exerciseIndex];
   if (!exercise) return;
-  const lastSet = exercise.sets[exercise.sets.length - 1] || { targetWeight: 0, targetReps: 10, amrap: false };
+  if (!Array.isArray(exercise.sets)) exercise.sets = [];
+  const fallback = isRunExercise(exercise) ? { targetDistance: 0, targetDurationSeconds: 0 } : { targetWeight: 0, targetReps: 10, amrap: false };
+  const lastSet = exercise.sets[exercise.sets.length - 1] || fallback;
   exercise.sets.push(clone(lastSet));
   await saveTemplate(template);
 }
@@ -235,8 +296,11 @@ async function removeSet(templateId, exerciseIndex, setIndex) {
   const template = templateById(templateId);
   const exercise = template?.exercises?.[exerciseIndex];
   if (!exercise) return;
+  if (!Array.isArray(exercise.sets)) exercise.sets = [];
   exercise.sets.splice(Number(setIndex), 1);
-  if (!exercise.sets.length) exercise.sets.push({ targetWeight: 0, targetReps: 10, amrap: false });
+  if (!exercise.sets.length) {
+    exercise.sets.push(isRunExercise(exercise) ? { targetDistance: 0, targetDurationSeconds: 0 } : { targetWeight: 0, targetReps: 10, amrap: false });
+  }
   await saveTemplate(template);
 }
 
@@ -247,6 +311,8 @@ async function updateTemplateSet(templateId, exerciseIndex, setIndex, field, val
   if (field === "amrap") set.amrap = Boolean(value);
   if (field === "targetWeight") set.targetWeight = parseNumber(value);
   if (field === "targetReps") set.targetReps = parseNumber(value);
+  if (field === "targetDistance") set.targetDistance = parseNumber(value);
+  if (field === "targetDurationSeconds") set.targetDurationSeconds = durationFromText(value);
   await saveTemplate(template);
 }
 
@@ -296,10 +362,22 @@ async function updateSessionSet(exerciseIndex, setIndex, field, value) {
   if (!set) return;
   if (field === "actualWeight") set.actualWeight = parseNumber(value);
   if (field === "actualReps") set.actualReps = parseNumber(value);
+  if (field === "actualDistance") set.actualDistance = parseNumber(value);
+  if (field === "actualDurationSeconds") set.actualDurationSeconds = durationFromText(value);
   if (field === "completed") set.completed = Boolean(value);
   if (field === "notes") set.notes = String(value || "");
   state.activeSession.durationSeconds = sessionDuration(state.activeSession);
   await put("sessions", clone(state.activeSession));
+}
+
+async function addSessionRun(data) {
+  if (!state.activeSession) return;
+  const exercise = runExerciseFromData(data, { session: true });
+  state.activeSession.exercises.push(exercise);
+  await rememberExercise(exercise.name);
+  state.activeSession.durationSeconds = sessionDuration(state.activeSession);
+  await put("sessions", clone(state.activeSession));
+  renderState();
 }
 
 async function finishSession() {
@@ -629,6 +707,7 @@ async function init() {
     updateExerciseName,
     addExercise,
     removeExercise,
+    addTemplateRun,
     addSet,
     removeSet,
     updateTemplateSet,
@@ -637,6 +716,7 @@ async function init() {
     discardActiveAndStart,
     cancelConflict,
     updateSessionSet,
+    addSessionRun,
     finishSession,
     addBodyweight,
     updateBodyweight,
