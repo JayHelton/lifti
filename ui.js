@@ -111,6 +111,14 @@ function handleSubmit(event) {
     actions.addExercise(data.templateId, data.exerciseName);
     form.reset();
   }
+  if (action === "add-template-run") {
+    actions.addTemplateRun(data);
+    form.reset();
+  }
+  if (action === "add-session-run") {
+    actions.addSessionRun(data);
+    form.reset();
+  }
   if (action === "add-bodyweight") {
     actions.addBodyweight(data.date, data.weight);
     form.reset();
@@ -297,7 +305,8 @@ function renderActiveSession(state) {
       </div>
       <span class="pill blue">${formatDuration(elapsedSeconds(session.startedAt))}</span>
     </div>
-    ${session.exercises.map((exercise, exerciseIndex) => renderSessionExercise(exercise, exerciseIndex)).join("")}
+    ${(session.exercises || []).map((exercise, exerciseIndex) => renderSessionExercise(exercise, exerciseIndex)).join("")}
+    ${renderAddSessionRunForm()}
     <div class="card compact">
       <div class="button-row">
         <button class="btn primary" type="button" data-action="finish-session">Save Workout</button>
@@ -307,7 +316,23 @@ function renderActiveSession(state) {
   </div>`;
 }
 
+function renderAddSessionRunForm() {
+  return `<form class="card compact stack" data-action="add-session-run">
+    <div class="row-title">Add Run</div>
+    <label class="field">
+      <span class="field-label">Name</span>
+      <input class="input" name="runName" list="exercise-library" placeholder="Easy Run">
+    </label>
+    <div class="two-col">
+      <label class="field"><span class="field-label">Distance (mi)</span><input class="input" type="number" step="0.01" name="distance" placeholder="Optional"></label>
+      <label class="field"><span class="field-label">Time</span><input class="input" name="duration" placeholder="Optional, e.g. 30:00"></label>
+    </div>
+    <button class="btn" type="submit">Add Run</button>
+  </form>`;
+}
+
 function renderSessionExercise(exercise, exerciseIndex) {
+  if (isRunExercise(exercise)) return renderSessionRun(exercise, exerciseIndex);
   return `<div class="exercise">
     <div class="exercise-head">
       <div class="row-title">${escapeHtml(exercise.name)}</div>
@@ -315,7 +340,7 @@ function renderSessionExercise(exercise, exerciseIndex) {
     <div class="set-grid session head">
       <div>Target</div><div>Weight</div><div>Reps</div><div>Done</div>
     </div>
-    ${exercise.sets.map((set, setIndex) => `<div class="session-set">
+    ${(exercise.sets || []).map((set, setIndex) => `<div class="session-set">
       <div class="set-grid session">
         <div class="set-target">${formatNumber(set.targetWeight)} x ${escapeHtml(set.targetReps)}${set.amrap ? "+" : ""}</div>
         <input class="input" type="number" inputmode="decimal" data-bind="session-set" data-field="actualWeight" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(set.actualWeight)}" aria-label="Actual weight">
@@ -325,6 +350,30 @@ function renderSessionExercise(exercise, exerciseIndex) {
       <details class="set-notes" ${set.notes ? "open" : ""}>
         <summary>Notes</summary>
         <textarea class="input" data-bind="session-set" data-field="notes" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" placeholder="Set notes">${escapeHtml(set.notes || "")}</textarea>
+      </details>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderSessionRun(exercise, exerciseIndex) {
+  return `<div class="exercise run-exercise">
+    <div class="exercise-head">
+      <div class="row-title">${escapeHtml(exercise.name)}</div>
+      <span class="pill blue">Run</span>
+    </div>
+    <div class="set-grid session run head">
+      <div>Target</div><div>Distance</div><div>Time</div><div>Done</div>
+    </div>
+    ${(exercise.sets || []).map((set, setIndex) => `<div class="session-set">
+      <div class="set-grid session run">
+        <div class="set-target">${formatRunTarget(set)}</div>
+        <input class="input" type="number" step="0.01" inputmode="decimal" data-bind="session-set" data-field="actualDistance" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(formatDistanceInput(set.actualDistance))}" aria-label="Actual distance">
+        <input class="input" data-bind="session-set" data-field="actualDurationSeconds" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(formatDurationInput(set.actualDurationSeconds))}" placeholder="30:00" aria-label="Actual time">
+        <input class="check" type="checkbox" data-bind="session-set" data-field="completed" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" ${set.completed ? "checked" : ""} aria-label="Completed">
+      </div>
+      <details class="set-notes" ${set.notes ? "open" : ""}>
+        <summary>Notes</summary>
+        <textarea class="input" data-bind="session-set" data-field="notes" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" placeholder="Run notes">${escapeHtml(set.notes || "")}</textarea>
       </details>
     </div>`).join("")}
   </div>`;
@@ -347,7 +396,7 @@ function renderTemplateEditor(state, template) {
           <input class="inline-input template-title" data-bind="template-name" data-template-id="${escapeAttr(template.id)}" value="${escapeAttr(template.name)}">
         </label>
       </div>
-      ${template.exercises.map((exercise, exerciseIndex) => renderTemplateExercise(template, exercise, exerciseIndex)).join("")}
+      ${(template.exercises || []).map((exercise, exerciseIndex) => renderTemplateExercise(template, exercise, exerciseIndex)).join("")}
       <form class="card compact stack" data-action="add-exercise">
         <input type="hidden" name="templateId" value="${escapeAttr(template.id)}">
         <label class="field">
@@ -356,11 +405,25 @@ function renderTemplateEditor(state, template) {
         </label>
         <button class="btn" type="submit">Add</button>
       </form>
+      <form class="card compact stack" data-action="add-template-run">
+        <input type="hidden" name="templateId" value="${escapeAttr(template.id)}">
+        <div class="row-title">Add Run</div>
+        <label class="field">
+          <span class="field-label">Name</span>
+          <input class="input" name="runName" list="exercise-library" placeholder="Easy Run">
+        </label>
+        <div class="two-col">
+          <label class="field"><span class="field-label">Distance (mi)</span><input class="input" type="number" step="0.01" name="distance" placeholder="Optional"></label>
+          <label class="field"><span class="field-label">Time</span><input class="input" name="duration" placeholder="Optional, e.g. 30:00"></label>
+        </div>
+        <button class="btn" type="submit">Add Run</button>
+      </form>
     </div>
   </details>`;
 }
 
 function renderTemplateExercise(template, exercise, exerciseIndex) {
+  if (isRunExercise(exercise)) return renderTemplateRun(template, exercise, exerciseIndex);
   return `<div class="exercise">
     <div class="exercise-head">
       <input class="inline-input" data-bind="exercise-name" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}" value="${escapeAttr(exercise.name)}" list="exercise-library" aria-label="Exercise name">
@@ -369,7 +432,7 @@ function renderTemplateExercise(template, exercise, exerciseIndex) {
     <div class="set-grid head">
       <div>Weight</div><div>Reps</div><div>AMRAP</div><div></div>
     </div>
-    ${exercise.sets.map((set, setIndex) => `<div class="set-grid">
+    ${(exercise.sets || []).map((set, setIndex) => `<div class="set-grid">
       <input class="input" type="number" inputmode="decimal" data-bind="template-set" data-template-id="${escapeAttr(template.id)}" data-field="targetWeight" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(set.targetWeight)}" aria-label="Target weight">
       <input class="input" type="number" inputmode="numeric" data-bind="template-set" data-template-id="${escapeAttr(template.id)}" data-field="targetReps" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(set.targetReps)}" aria-label="Target reps">
       <input class="check" type="checkbox" data-bind="template-set" data-template-id="${escapeAttr(template.id)}" data-field="amrap" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" ${set.amrap ? "checked" : ""} aria-label="AMRAP">
@@ -377,6 +440,27 @@ function renderTemplateExercise(template, exercise, exerciseIndex) {
     </div>`).join("")}
     <div class="button-row" style="padding:10px">
       <button class="btn sm" type="button" data-action="add-set" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}">Add Set</button>
+    </div>
+  </div>`;
+}
+
+function renderTemplateRun(template, exercise, exerciseIndex) {
+  return `<div class="exercise run-exercise">
+    <div class="exercise-head">
+      <input class="inline-input" data-bind="exercise-name" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}" value="${escapeAttr(exercise.name)}" list="exercise-library" aria-label="Run name">
+      <span class="pill blue">Run</span>
+      <button class="btn icon danger" type="button" data-action="remove-exercise" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}" aria-label="Remove run">x</button>
+    </div>
+    <div class="set-grid run head">
+      <div>Distance</div><div>Time</div><div></div>
+    </div>
+    ${(exercise.sets || []).map((set, setIndex) => `<div class="set-grid run">
+      <input class="input" type="number" step="0.01" inputmode="decimal" data-bind="template-set" data-template-id="${escapeAttr(template.id)}" data-field="targetDistance" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(formatDistanceInput(set.targetDistance))}" placeholder="Optional" aria-label="Target distance">
+      <input class="input" data-bind="template-set" data-template-id="${escapeAttr(template.id)}" data-field="targetDurationSeconds" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(formatDurationInput(set.targetDurationSeconds))}" placeholder="Optional" aria-label="Target time">
+      <button class="btn icon" type="button" data-action="remove-set" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" aria-label="Remove run target">-</button>
+    </div>`).join("")}
+    <div class="button-row" style="padding:10px">
+      <button class="btn sm" type="button" data-action="add-set" data-template-id="${escapeAttr(template.id)}" data-exercise-index="${exerciseIndex}">Add Run Target</button>
     </div>
   </div>`;
 }
@@ -558,9 +642,9 @@ function renderActivityDetail(item) {
   if (item.session) {
     const session = item.session;
     return `<div class="history-detail stack">
-      ${session.exercises.map((exercise) => `<div>
+      ${(session.exercises || []).map((exercise) => `<div>
         <div class="row-title">${escapeHtml(exercise.name)}</div>
-        <div class="meta-row">${exercise.sets.filter((set) => set.completed).map((set) => `<span class="pill">${formatNumber(set.actualWeight)} x ${escapeHtml(set.actualReps)}</span>`).join("") || `<span class="muted">No completed sets</span>`}</div>
+        <div class="meta-row">${renderCompletedSessionSets(exercise)}</div>
       </div>`).join("")}
       ${session.prs?.length ? `<div class="pr-list">${session.prs.map(renderPR).join("")}</div>` : ""}
     </div>`;
@@ -577,6 +661,15 @@ function renderActivityDetail(item) {
     </div>`;
   }
   return `<div class="history-detail"><span class="pill">${escapeHtml(item.title)}</span></div>`;
+}
+
+function renderCompletedSessionSets(exercise) {
+  const completed = (exercise.sets || []).filter((set) => set.completed);
+  if (!completed.length) return `<span class="muted">No completed sets</span>`;
+  if (isRunExercise(exercise)) {
+    return completed.map((set) => `<span class="pill blue">${formatRunResult(set)}</span>`).join("");
+  }
+  return completed.map((set) => `<span class="pill">${formatNumber(set.actualWeight)} x ${escapeHtml(set.actualReps)}</span>`).join("");
 }
 
 function renderPR(pr) {
@@ -655,13 +748,55 @@ function renderExerciseDatalist(state) {
   return `<datalist id="exercise-library">${state.exerciseLibrary.map((exercise) => `<option value="${escapeAttr(exercise.name)}"></option>`).join("")}</datalist>`;
 }
 
+function isRunExercise(exercise) {
+  return exercise?.type === "run" || (exercise?.sets || []).some((set) => hasRunFields(set));
+}
+
+function hasRunFields(set) {
+  return Boolean(set) && (
+    "targetDistance" in set ||
+    "targetDurationSeconds" in set ||
+    "actualDistance" in set ||
+    "actualDurationSeconds" in set
+  );
+}
+
+function formatRunTarget(set) {
+  const parts = [];
+  const distance = Number(set.targetDistance) || 0;
+  const duration = Number(set.targetDurationSeconds) || 0;
+  if (distance > 0) parts.push(`${formatNumber(distance, 2)} mi`);
+  if (duration > 0) parts.push(formatDuration(duration));
+  return parts.join(" / ") || "Open run";
+}
+
+function formatRunResult(set) {
+  const parts = [];
+  const distance = Number(set.actualDistance) || Number(set.targetDistance) || 0;
+  const duration = Number(set.actualDurationSeconds) || Number(set.targetDurationSeconds) || 0;
+  if (distance > 0) parts.push(`${formatNumber(distance, 2)} mi`);
+  if (duration > 0) parts.push(formatDuration(duration));
+  return parts.join(" / ") || "Run";
+}
+
+function formatDistanceInput(value) {
+  const distance = Number(value) || 0;
+  return distance > 0 ? formatNumber(distance, 2) : "";
+}
+
+function formatDurationInput(seconds) {
+  const duration = Number(seconds) || 0;
+  return duration > 0 ? formatDuration(duration) : "";
+}
+
 function buildStats(state) {
   const finished = state.sessions.filter((session) => session.status === "finished");
   let volume = 0;
 
   finished.forEach((session) => {
-    session.exercises.forEach((exercise) => {
-      exercise.sets.filter((set) => set.completed).forEach((set) => {
+    (session.exercises || []).forEach((exercise) => {
+      if (isRunExercise(exercise)) return;
+      (exercise.sets || []).filter((set) => set.completed).forEach((set) => {
         volume += (Number(set.actualWeight) || 0) * (Number(set.actualReps) || 0);
       });
     });
@@ -669,9 +804,18 @@ function buildStats(state) {
 
   return {
     volume,
-    runDistance: state.runs.reduce((sum, run) => sum + (Number(run.distance) || 0), 0),
+    runDistance: state.runs.reduce((sum, run) => sum + (Number(run.distance) || 0), 0) + sessionRunDistance(finished),
     activityCount: finished.length + state.runs.length + state.bodyweight.length
   };
+}
+
+function sessionRunDistance(sessions) {
+  return sessions.reduce((total, session) => total + (session.exercises || []).reduce((exerciseTotal, exercise) => {
+    if (!isRunExercise(exercise)) return exerciseTotal;
+    return exerciseTotal + (exercise.sets || [])
+      .filter((set) => set.completed)
+      .reduce((setTotal, set) => setTotal + (Number(set.actualDistance) || Number(set.targetDistance) || 0), 0);
+  }, 0), 0);
 }
 
 function drawBodyweightChart(items) {

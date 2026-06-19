@@ -139,6 +139,17 @@ function assistance(name, sets, targetWeight = 0, targetReps = 10) {
   };
 }
 
+function run(name, distance = 0, durationMinutes = 0) {
+  return {
+    name,
+    type: "run",
+    sets: [{
+      targetDistance: Number(distance) || 0,
+      targetDurationSeconds: Math.max(0, Math.round((Number(durationMinutes) || 0) * 60))
+    }]
+  };
+}
+
 function template(id, day, name, exercises, programMeta = {}) {
   return { id, day, name, exercises, programMeta };
 }
@@ -168,7 +179,7 @@ export function generate531Templates(options = {}) {
       assistance("DB Row", 4, 0, 10)
     ], { program: "5/3/1", cycle: settings.cycle, week: settings.week }),
     template("template-day-6", 6, "Run / Recovery", [
-      assistance("Easy Run", 1, 0, 30),
+      run("Easy Run", 0, 30),
       assistance("Mobility", 3, 0, 10)
     ], { program: "5/3/1", cycle: settings.cycle, week: settings.week }),
     template("template-day-7", 7, "Rest / Mobility", [
@@ -201,7 +212,7 @@ export function generateStrongLiftsTemplates(options = {}) {
     template("template-day-5", 5, "StrongLifts A", clone(workoutA), { program: "StrongLifts 5x5" }),
     template("template-day-6", 6, "StrongLifts B", clone(workoutB), { program: "StrongLifts 5x5" }),
     template("template-day-7", 7, "Run / Recovery", [
-      assistance("Easy Run", 1, 0, 30),
+      run("Easy Run", 0, 30),
       assistance("Mobility", 3, 0, 10)
     ], { program: "StrongLifts 5x5" })
   ];
