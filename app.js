@@ -631,8 +631,8 @@ async function applyStrongLifts(data) {
     strongLifts: {
       Squat: parseNumber(data.squat),
       "Bench Press": parseNumber(data.bench),
-      "DB Row": parseNumber(data.row),
-      Press: parseNumber(data.press),
+      "Barbell Row": parseNumber(data.row),
+      "Overhead Press": parseNumber(data.press),
       Deadlift: parseNumber(data.deadlift)
     }
   };

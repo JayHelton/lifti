@@ -342,7 +342,7 @@ function renderSessionExercise(exercise, exerciseIndex) {
     </div>
     ${(exercise.sets || []).map((set, setIndex) => `<div class="session-set">
       <div class="set-grid session">
-        <div class="set-target">${formatNumber(set.targetWeight)} x ${escapeHtml(set.targetReps)}${set.amrap ? "+" : ""}</div>
+        <div class="set-target">${formatSetTarget(set)}</div>
         <input class="input" type="number" inputmode="decimal" data-bind="session-set" data-field="actualWeight" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(set.actualWeight)}" aria-label="Actual weight">
         <input class="input" type="number" inputmode="numeric" data-bind="session-set" data-field="actualReps" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" value="${escapeAttr(set.actualReps)}" aria-label="Actual reps">
         <input class="check" type="checkbox" data-bind="session-set" data-field="completed" data-exercise-index="${exerciseIndex}" data-set-index="${setIndex}" ${set.completed ? "checked" : ""} aria-label="Completed">
@@ -721,8 +721,8 @@ function renderPrograms(state) {
         <div class="tm-grid">
           <label class="field"><span class="field-label">Squat</span><input class="input" name="squat" type="number" value="${escapeAttr(sl.Squat || 0)}"></label>
           <label class="field"><span class="field-label">Bench</span><input class="input" name="bench" type="number" value="${escapeAttr(sl["Bench Press"] || 0)}"></label>
-          <label class="field"><span class="field-label">Row</span><input class="input" name="row" type="number" value="${escapeAttr(sl["DB Row"] || 0)}"></label>
-          <label class="field"><span class="field-label">Press</span><input class="input" name="press" type="number" value="${escapeAttr(sl.Press || 0)}"></label>
+          <label class="field"><span class="field-label">Row</span><input class="input" name="row" type="number" value="${escapeAttr(sl["Barbell Row"] || sl["DB Row"] || 0)}"></label>
+          <label class="field"><span class="field-label">Press</span><input class="input" name="press" type="number" value="${escapeAttr(sl["Overhead Press"] || sl.Press || 0)}"></label>
           <label class="field"><span class="field-label">Deadlift</span><input class="input" name="deadlift" type="number" value="${escapeAttr(sl.Deadlift || 0)}"></label>
         </div>
         <button class="btn blue" type="submit">Generate</button>
@@ -768,6 +768,16 @@ function formatRunTarget(set) {
   if (distance > 0) parts.push(`${formatNumber(distance, 2)} mi`);
   if (duration > 0) parts.push(formatDuration(duration));
   return parts.join(" / ") || "Open run";
+}
+
+function formatSetTarget(set) {
+  const weight = Number(set.targetWeight) || 0;
+  const reps = Number(set.targetReps) || 0;
+  const suffix = set.amrap ? "+" : "";
+  if (weight > 0 && reps > 0) return `${formatNumber(weight)} x ${reps}${suffix}`;
+  if (reps > 0) return `${reps}${suffix} reps`;
+  if (weight > 0) return `${formatNumber(weight)} lb`;
+  return set.amrap ? "AMRAP" : "Open";
 }
 
 function formatRunResult(set) {
