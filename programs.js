@@ -3,11 +3,28 @@ export const DEFAULT_EXERCISES = [
   "Squat",
   "Deadlift",
   "Press",
+  "Overhead Press",
+  "Barbell Row",
   "DB Row",
   "Pullups",
+  "Pull-Ups or Assisted Pull-Ups",
+  "Chin-Ups or Neutral-Grip Pull-Ups",
   "Leg Curl",
+  "Romanian Deadlift or Leg Curl",
   "Cable Fly",
+  "Incline Dumbbell Press",
+  "Lateral Raises",
+  "Triceps Pressdowns",
+  "Dumbbell Curls",
+  "Face Pulls or Rear Delt Flyes",
+  "Lat Pulldown",
   "Hammer Curl",
+  "Hammer Curls",
+  "Calf Raises",
+  "Abs",
+  "Core",
+  "Rehab Work",
+  "Cardio",
   "Easy Run",
   "Mobility"
 ];
@@ -29,8 +46,8 @@ export const DEFAULT_SETTINGS = {
   strongLifts: {
     Squat: 135,
     "Bench Press": 115,
-    "DB Row": 95,
-    Press: 75,
+    "Barbell Row": 95,
+    "Overhead Press": 75,
     Deadlift: 185
   }
 };
@@ -193,28 +210,52 @@ export function generate531Templates(options = {}) {
 export function generateStrongLiftsTemplates(options = {}) {
   const settings = mergeSettings(options);
   const w = settings.strongLifts;
+  const program = "StrongLifts 5x5";
+  const meta = {
+    program,
+    schedule: "Week 1 A/B/A, Week 2 B/A/B"
+  };
   const workoutA = [
+    run("1 Mile Easy Run Warmup", 1, 0),
     assistance("Squat", 5, w.Squat, 5),
     assistance("Bench Press", 5, w["Bench Press"], 5),
-    assistance("DB Row", 5, w["DB Row"], 5)
+    assistance("Barbell Row", 5, w["Barbell Row"] ?? w["DB Row"], 5),
+    assistance("Pull-Ups or Assisted Pull-Ups", 4, 0, 0),
+    assistance("Incline Dumbbell Press", 2, 0, 12),
+    assistance("Lateral Raises", 2, 0, 20),
+    assistance("Triceps Pressdowns", 2, 0, 15),
+    assistance("Dumbbell Curls", 2, 0, 15),
+    assistance("Abs", 2, 0, 15),
+    run("20 Minute Easy Run Cooldown", 0, 20)
   ];
   const workoutB = [
+    run("1 Mile Easy Run Warmup", 1, 0),
     assistance("Squat", 5, w.Squat, 5),
-    assistance("Press", 5, w.Press, 5),
-    assistance("Deadlift", 1, w.Deadlift, 5)
+    assistance("Overhead Press", 5, w["Overhead Press"] ?? w.Press, 5),
+    assistance("Deadlift", 1, w.Deadlift, 5),
+    assistance("Chin-Ups or Neutral-Grip Pull-Ups", 4, 0, 0),
+    assistance("Romanian Deadlift or Leg Curl", 2, 0, 12),
+    assistance("Face Pulls or Rear Delt Flyes", 2, 0, 20),
+    assistance("Lat Pulldown", 2, 0, 15),
+    assistance("Hammer Curls", 2, 0, 15),
+    assistance("Calf Raises", 2, 0, 20),
+    assistance("Core", 2, 0, 0),
+    run("20 Minute Easy Run Cooldown", 0, 20)
+  ];
+  const cardioRehabCore = [
+    run("40 Minute Cardio", 0, 40),
+    assistance("Rehab Work", 3, 0, 10),
+    assistance("Core", 3, 0, 10)
   ];
 
   return [
-    template("template-day-1", 1, "StrongLifts A", clone(workoutA), { program: "StrongLifts 5x5" }),
-    template("template-day-2", 2, "StrongLifts B", clone(workoutB), { program: "StrongLifts 5x5" }),
-    template("template-day-3", 3, "StrongLifts A", clone(workoutA), { program: "StrongLifts 5x5" }),
-    template("template-day-4", 4, "StrongLifts B", clone(workoutB), { program: "StrongLifts 5x5" }),
-    template("template-day-5", 5, "StrongLifts A", clone(workoutA), { program: "StrongLifts 5x5" }),
-    template("template-day-6", 6, "StrongLifts B", clone(workoutB), { program: "StrongLifts 5x5" }),
-    template("template-day-7", 7, "Run / Recovery", [
-      run("Easy Run", 0, 30),
-      assistance("Mobility", 3, 0, 10)
-    ], { program: "StrongLifts 5x5" })
+    template("template-day-1", 1, "StrongLifts A", clone(workoutA), meta),
+    template("template-day-2", 2, "Cardio / Rehab / Core", clone(cardioRehabCore), meta),
+    template("template-day-3", 3, "StrongLifts B", clone(workoutB), meta),
+    template("template-day-4", 4, "Cardio / Rehab / Core", clone(cardioRehabCore), meta),
+    template("template-day-5", 5, "StrongLifts A", clone(workoutA), meta),
+    template("template-day-6", 6, "Cardio / Rehab / Core", clone(cardioRehabCore), meta),
+    template("template-day-7", 7, "Rest", [], meta)
   ];
 }
 
